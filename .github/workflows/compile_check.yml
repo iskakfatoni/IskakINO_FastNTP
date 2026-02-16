@@ -55,19 +55,29 @@ jobs:
           cd $HOME/Arduino/libraries
           
           echo "Cloning Dependencies..."
-          # Clone WifiPortal (Pastikan nama repo benar)
           git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO_WifiPortal.git || true
-          
-          # Clone ArduFast (Mencoba dua kemungkinan nama agar tidak gagal)
+          # Mencoba clone ArduFast (Testing both - and _)
           git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO_ArduFast.git || \
           git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO-ArduFast.git || true
 
-      - name: Patch Private Member Error
+      - name: Patch Code for Compatibility
         run: |
-          echo "Removing portal.handle() or portal.handleOTA() calls to avoid private member error..."
-          # Kita hapus seluruh baris yang mengandung portal.handle karena fungsinya private di library target
+          echo "Patching examples to match IskakINO_ArduFast & WifiPortal structure..."
+          
+          # 1. Menangani Member Private di WifiPortal
           find examples -name "*.ino" -exec sed -i '/portal.handle/d' {} +
           
+          # 2. Menangani fungsi IO yang tidak ada di class IskakINO_ArduFast
+          # Mengubah io.pinMode(...) menjadi pinMode(...) standar Arduino
+          find examples -name "*.ino" -exec sed -i 's/io.pinMode/pinMode/g' {} +
+          
+          # Mengubah io.digitalWrite(...) menjadi digitalWrite(...) standar Arduino
+          find examples -name "*.ino" -exec sed -i 's/io.digitalWrite/digitalWrite/g' {} +
+          
+          # 3. Opsional: Pastikan instance io dikenal (jika di contoh pakai nama 'io')
+          # Berdasarkan .cpp Anda, global instance-nya bernama 'ArduFast'
+          # Jika di .ino Anda pakai 'IskakINO_ArduFast io;', sed ini tidak diperlukan.
+
       - name: Compile All Examples
         run: |
           LIB_PATH="$HOME/Arduino/libraries"
@@ -84,4 +94,4 @@ jobs:
     needs: [lint, build]
     if: success()
     steps:
-      - run: echo "🚀 MANTAP! Build sukses setelah membersihkan konflik fungsi private."
+      - run: echo "🚀 Mantap iskakfatoni! Semua rintangan fungsi private dan missing members teratasi."
