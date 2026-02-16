@@ -5,7 +5,8 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
-
+  workflow_dispatch: # <--- Tambahkan baris ini (sejajar dengan push)
+  
 jobs:
   lint:
     name: "1. Arduino Lint"
