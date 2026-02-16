@@ -6,8 +6,6 @@
   <img src="https://img.shields.io/badge/Platform-ESP8266%20%7C%20ESP32-orange?style=flat-square" alt="Platform">
   <img src="https://img.shields.io/badge/Language-C%2B%2B-green?style=flat-square" alt="Language">
 </p>
-[![IskakINO Library CI](https://github.com/iskakfatoni/IskakINO_FastNTP/actions/workflows/compile_check.yml/badge.svg)](https://github.com/iskakfatoni/IskakINO_FastNTP/actions/workflows/compile_check.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Library NTP (Network Time Protocol) **Non-Blocking** untuk ESP8266 dan ESP32. Dirancang khusus untuk efisiensi tinggi menggunakan *State Machine* sehingga tidak mengganggu proses utama (no delay).
 
