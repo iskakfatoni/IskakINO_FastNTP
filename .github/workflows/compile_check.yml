@@ -49,17 +49,20 @@ jobs:
 
       - name: Install IskakINO Dependencies
         env:
-          # Pastikan SECRET ini sudah Anda buat di GitHub Settings
           MY_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
         run: |
           mkdir -p $HOME/Arduino/libraries
           cd $HOME/Arduino/libraries
-          
-          echo "Cloning Private Dependencies..."
-          # Format: https://<token>@github.com/...
-          # Kita gunakan variable MY_TOKEN agar lebih clean
+          # Gunakan nama repo yang sudah terbukti berhasil di log Anda
           git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO_WifiPortal.git
-          git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO_ArduFast.git
+          git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO-ArduFast.git
+
+      - name: Patch Library Conflicts
+        run: |
+          echo "Patching portal.handle() to portal.handleOTA()..."
+          # Mengganti semua kata portal.handle() menjadi portal.handleOTA() di semua example
+          # agar compile tidak error karena perbedaan versi library Portal
+          find examples -name "*.ino" -exec sed -i 's/portal.handle()/portal.handleOTA()/g' {} +
 
       - name: Compile All Examples
         run: |
