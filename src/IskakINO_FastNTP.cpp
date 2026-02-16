@@ -88,11 +88,10 @@ void IskakINO_FastNTP::sendNTPPacket() {
 
 /**
  * getMillisSinceLastSync: Menghitung selisih waktu sejak sinkronisasi sukses terakhir.
- * Memperbaiki error 'undefined reference' di GitHub Actions.
  */
-unsigned long IskakINO_FastNTP::getMillisSinceLastSync() {
+uint32_t IskakINO_FastNTP::getMillisSinceLastSync() {
     if (_lastSyncMs == 0) return 0;
-    return millis() - _lastSyncMs;
+    return (uint32_t)(millis() - _lastSyncMs);
 }
 
 // --- Getters ---
