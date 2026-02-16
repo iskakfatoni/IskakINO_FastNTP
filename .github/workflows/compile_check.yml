@@ -1,0 +1,57 @@
+name: Arduino Library Check
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Arduino Lint
+        uses: arduino/arduino-lint-action@v1
+        with:
+          library-manager: update
+          compliance: strict
+
+  build:
+    runs-on: ubuntu-latest
+    needs: lint
+    strategy:
+      matrix:
+        # Mengetes di dua platform utama yang Anda targetkan
+        board: [ "esp8266:esp8266:nodemcuv2", "esp32:esp32:esp32" ]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Arduino CLI
+        uses: arduino/setup-arduino-cli@v1
+
+      - name: Install Platforms and Dependencies
+        run: |
+          arduino-cli core update-index
+          if [[ "${{ matrix.board }}" == *"esp8266"* ]]; then
+            arduino-cli core install esp8266:esp8266
+          else
+            arduino-cli core install esp32:esp32
+          fi
+          # Install Library Pendukung (Pastikan library ini ada di Library Manager)
+          # Jika IskakINO_WifiPortal & ArduFast belum ada di public manager, 
+          # Anda harus menambahkannya manual ke folder libraries/
+          # arduino-cli lib install "IskakINO_WifiPortal"
+          # arduino-cli lib install "IskakINO-ArduFast"
+
+      - name: Compile All Examples
+        run: |
+          # Mencari semua file .ino di dalam folder examples dan melakukan compile
+          for example in $(find examples -name "*.ino"); do
+            echo "Compiling $example..."
+            arduino-cli compile --fqbn ${{ matrix.board }} $example --library .
+          done
