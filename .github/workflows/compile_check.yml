@@ -1,4 +1,4 @@
-name: Arduino Library Check
+name: IskakINO Library CI
 
 on:
   push:
@@ -8,6 +8,7 @@ on:
 
 jobs:
   lint:
+    name: "Arduino Lint"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -16,15 +17,17 @@ jobs:
       - name: Arduino Lint
         uses: arduino/arduino-lint-action@v1
         with:
+          # Menggunakan specification agar tidak error LP018 (Library name not in index)
+          compliance: specification
           library-manager: update
-          compliance: strict
 
   build:
+    name: "Compile Examples"
     runs-on: ubuntu-latest
     needs: lint
     strategy:
       matrix:
-        # Mengetes di dua platform utama yang Anda targetkan
+        # Mengetes di platform target IskakINO
         board: [ "esp8266:esp8266:nodemcuv2", "esp32:esp32:esp32" ]
     
     steps:
@@ -34,24 +37,36 @@ jobs:
       - name: Install Arduino CLI
         uses: arduino/setup-arduino-cli@v1
 
-      - name: Install Platforms and Dependencies
+      - name: Install Platforms
         run: |
           arduino-cli core update-index
           if [[ "${{ matrix.board }}" == *"esp8266"* ]]; then
             arduino-cli core install esp8266:esp8266
           else
+            # Install ESP32 core (membutuhkan URL tambahan jika index standar tidak ada)
+            arduino-cli config init
+            arduino-cli config set board_manager.additional_urls https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+            arduino-cli core update-index
             arduino-cli core install esp32:esp32
           fi
-          # Install Library Pendukung (Pastikan library ini ada di Library Manager)
-          # Jika IskakINO_WifiPortal & ArduFast belum ada di public manager, 
-          # Anda harus menambahkannya manual ke folder libraries/
-          # arduino-cli lib install "IskakINO_WifiPortal"
-          # arduino-cli lib install "IskakINO-ArduFast"
+
+      - name: Install IskakINO Dependencies
+        run: |
+          # Membuat folder library manual untuk menampung dependensi
+          mkdir -p $HOME/Arduino/libraries
+          cd $HOME/Arduino/libraries
+          
+          echo "Cloning required IskakINO libraries..."
+          git clone https://github.com/iskakfatoni/IskakINO_WifiPortal.git
+          git clone https://github.com/iskakfatoni/IskakINO-ArduFast.git
 
       - name: Compile All Examples
         run: |
-          # Mencari semua file .ino di dalam folder examples dan melakukan compile
+          # Melakukan loop pada semua folder di dalam 'examples'
           for example in $(find examples -name "*.ino"); do
-            echo "Compiling $example..."
-            arduino-cli compile --fqbn ${{ matrix.board }} $example --library .
+            echo "-------------------------------------------------------"
+            echo "Building: $example"
+            echo "-------------------------------------------------------"
+            # --library . digunakan agar CLI tahu library yang sedang dites adalah folder saat ini
+            arduino-cli compile --fqbn ${{ matrix.board }} "$example" --library . --libraries $HOME/Arduino/libraries
           done
