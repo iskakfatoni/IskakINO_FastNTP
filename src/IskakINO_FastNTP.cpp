@@ -165,3 +165,8 @@ void IskakINO_FastNTP::setEpoch(uint32_t manualEpoch) {
     _lastUpdateTick = millis();
     _lastSyncMs = millis(); // Anggap ini sebagai titik sinkronisasi manual
 }
+
+void IskakINO_FastNTP::forceUpdate() {
+    _state = STATE_SEND_REQUEST; // Mengubah state agar mesin mulai mengirim paket lagi
+    _lastSyncMs = millis() - _syncInterval; // Memaksa interval dianggap sudah habis
+}
