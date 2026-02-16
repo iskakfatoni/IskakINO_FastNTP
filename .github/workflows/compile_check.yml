@@ -27,7 +27,6 @@ jobs:
     needs: lint
     strategy:
       matrix:
-        # Menjalankan build untuk ESP8266 dan ESP32 secara paralel
         board: [ "esp8266:esp8266:nodemcuv2", "esp32:esp32:esp32" ]
     
     steps:
@@ -55,30 +54,11 @@ jobs:
           mkdir -p $HOME/Arduino/libraries
           cd $HOME/Arduino/libraries
           
-          echo "Cloning Dependencies from iskakfatoni..."
-          # Clone WifiPortal
+          echo "Cloning Dependencies..."
+          # Clone WifiPortal & ArduFast tanpa trik sed
           git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO_WifiPortal.git || true
-          
-          # Clone ArduFast (Coba underscore dan dash untuk keamanan)
           git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO_ArduFast.git || \
           git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO-ArduFast.git || true
-
-      - name: Patch Library & Source Conflicts
-        run: |
-          echo "Running Auto-Patch to fix library inconsistencies..."
-          
-          # 1. Fix WifiPortal: Hapus baris portal.handle karena statusnya PRIVATE
-          find examples -name "*.ino" -exec sed -i '/portal.handle/d' {} +
-          
-          # 2. Fix ArduFast: Alihkan io.member ke global function (pinMode, digitalWrite, digitalRead)
-          find examples -name "*.ino" -exec sed -i 's/io.pinMode/pinMode/g' {} +
-          find examples -name "*.ino" -exec sed -i 's/io.digitalWrite/digitalWrite/g' {} +
-          find examples -name "*.ino" -exec sed -i 's/io.digitalRead/digitalRead/g' {} +
-
-          # 3. Fix FastNTP: Pastikan tipe data getMillisSinceLastSync sinkron (uint32_t)
-          if [ -f "src/IskakINO_FastNTP.cpp" ]; then
-            sed -i 's/unsigned long IskakINO_FastNTP::getMillisSinceLastSync/uint32_t IskakINO_FastNTP::getMillisSinceLastSync/g' src/IskakINO_FastNTP.cpp
-          fi
 
       - name: Compile All Examples
         run: |
@@ -87,6 +67,7 @@ jobs:
             echo "-------------------------------------------------------"
             echo "Building: $example (${{ matrix.board }})"
             echo "-------------------------------------------------------"
+            # Kompilasi bersih tanpa modifikasi file
             arduino-cli compile --fqbn ${{ matrix.board }} "$example" --library . --libraries $LIB_PATH
           done
 
@@ -96,4 +77,4 @@ jobs:
     needs: [lint, build]
     if: success()
     steps:
-      - run: echo "🚀 SUCCESS! IskakINO_FastNTP berhasil melewati semua tahap pengujian."
+      - run: echo "🚀 MANTAP! Library IskakINO_FastNTP sudah stand-alone dan lulus uji tanpa patching."
