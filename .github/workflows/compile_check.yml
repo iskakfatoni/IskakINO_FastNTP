@@ -19,7 +19,6 @@ jobs:
         with:
           compliance: specification
           recursive: true
-          # Skip rule LP018 agar tidak error karena nama library belum terdaftar
           args: --skip-rule LP018
 
   build:
@@ -28,7 +27,6 @@ jobs:
     needs: lint
     strategy:
       matrix:
-        # Menjalankan build paralel untuk ESP8266 dan ESP32
         board: [ "esp8266:esp8266:nodemcuv2", "esp32:esp32:esp32" ]
     
     steps:
@@ -40,48 +38,40 @@ jobs:
 
       - name: Configure and Install Platforms
         run: |
-          # URL Official yang stabil (Anti 404)
           URL_ESP8266="https://arduino.esp8266.com/stable/package_esp8266com_index.json"
           URL_ESP32="https://espressif.github.io/arduino-esp32/package_esp32_index.json"
           
-          echo "Updating Arduino CLI Index..."
           arduino-cli core update-index --additional-urls $URL_ESP8266,$URL_ESP32
           
           if [[ "${{ matrix.board }}" == *"esp8266"* ]]; then
-            echo "Installing ESP8266 Core..."
             arduino-cli core install esp8266:esp8266 --additional-urls $URL_ESP8266
           else
-            echo "Installing ESP32 Core..."
             arduino-cli core install esp32:esp32 --additional-urls $URL_ESP32
           fi
 
       - name: Install IskakINO Dependencies
         env:
-          # Pastikan Anda sudah membuat secret MY_GITHUB_TOKEN di settings repo
           GH_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
         run: |
           mkdir -p $HOME/Arduino/libraries
           cd $HOME/Arduino/libraries
           
+          echo "Configuring Git Authentication..."
+          # Menggunakan format 'x-access-token' yang lebih standar untuk GitHub Actions
+          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
+          
           echo "Cloning Private Dependencies..."
-          # Menggunakan token untuk bypass otentikasi (Error 128)
-          git clone --depth 1 https://${GH_TOKEN}@github.com/iskakfatoni/IskakINO_WifiPortal.git
-          git clone --depth 1 https://${GH_TOKEN}@github.com/iskakfatoni/IskakINO-ArduFast.git
+          git clone --depth 1 https://github.com/iskakfatoni/IskakINO_WifiPortal.git
+          git clone --depth 1 https://github.com/iskakfatoni/IskakINO-ArduFast.git
 
       - name: Compile All Examples
         run: |
           LIB_PATH="$HOME/Arduino/libraries"
-          
-          # Cari semua file .ino di folder examples
           for example in $(find examples -name "*.ino"); do
             echo ""
             echo "======================================================="
-            echo " BUILDING: $example"
-            echo " BOARD:    ${{ matrix.board }}"
+            echo " BUILDING: $example (${{ matrix.board }})"
             echo "======================================================="
-            
-            # --library .       => gunakan library ini (FastNTP)
-            # --libraries $LIB_PATH => gunakan dependensi (WifiPortal & ArduFast)
             arduino-cli compile --fqbn ${{ matrix.board }} "$example" --library . --libraries $LIB_PATH
           done
 
@@ -91,4 +81,4 @@ jobs:
     needs: [lint, build]
     if: success()
     steps:
-      - run: echo "🎉 Selamat iskakfatoni! Semua tahap CI (Lint & Compile) berhasil dilewati."
+      - run: echo "🚀 Berhasil! Semua dependensi ditarik dan compile sukses."
