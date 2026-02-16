@@ -53,15 +53,20 @@ jobs:
         run: |
           mkdir -p $HOME/Arduino/libraries
           cd $HOME/Arduino/libraries
-          # Gunakan nama repo yang sudah terbukti berhasil di log Anda
-          git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO_WifiPortal.git
-          git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO-ArduFast.git
+          
+          echo "Cloning IskakINO_WifiPortal..."
+          git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO_WifiPortal.git || echo "WifiPortal already exists or failed"
+          
+          echo "Trying to clone ArduFast (Testing both - and _)..."
+          # Coba pakai underscore (Standard Anda)
+          git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO_ArduFast.git || \
+          # Jika gagal, coba pakai strip (Sesuai log error tadi)
+          git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO-ArduFast.git || \
+          echo "ArduFast not found on both naming conventions!"
 
       - name: Patch Library Conflicts
         run: |
-          echo "Patching portal.handle() to portal.handleOTA()..."
-          # Mengganti semua kata portal.handle() menjadi portal.handleOTA() di semua example
-          # agar compile tidak error karena perbedaan versi library Portal
+          echo "Patching portal.handle() to portal.handleOTA() to match library..."
           find examples -name "*.ino" -exec sed -i 's/portal.handle()/portal.handleOTA()/g' {} +
 
       - name: Compile All Examples
