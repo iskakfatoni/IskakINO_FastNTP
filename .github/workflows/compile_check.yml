@@ -14,15 +14,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install Arduino Lint
-        run: |
-          curl -fsSL https://raw.githubusercontent.com/arduino/arduino-lint/main/install.sh | sh
-          echo "$HOME/bin" >> $GITHUB_PATH
-
-      - name: Run Arduino Lint (Bypass LP018)
-        run: |
-          # Kita jalankan manual tanpa library-manager agar tidak cek index sama sekali
-          arduino-lint --compliance specification --recursive --skip-rule LP018 .
+      - name: Arduino Lint
+        uses: arduino/arduino-lint-action@v1
+        with:
+          # KUNCINYA: Jangan gunakan 'library-manager' sama sekali di sini
+          # Cukup gunakan compliance specification dan recursive
+          compliance: specification
+          recursive: true
+          # Skip rule LP018 jika masih muncul secara internal
+          args: --skip-rule LP018
 
   build:
     name: "Compile Examples"
@@ -74,4 +74,4 @@ jobs:
     needs: [lint, build]
     if: success()
     steps:
-      - run: echo "🚀 Build Sukses! Ekosistem IskakINO aman dikelola."
+      - run: echo "🚀 Build Sukses! IskakINO_FastNTP siap digunakan."
