@@ -40,9 +40,7 @@ jobs:
         run: |
           URL_ESP8266="https://arduino.esp8266.com/stable/package_esp8266com_index.json"
           URL_ESP32="https://espressif.github.io/arduino-esp32/package_esp32_index.json"
-          
           arduino-cli core update-index --additional-urls $URL_ESP8266,$URL_ESP32
-          
           if [[ "${{ matrix.board }}" == *"esp8266"* ]]; then
             arduino-cli core install esp8266:esp8266 --additional-urls $URL_ESP8266
           else
@@ -51,34 +49,22 @@ jobs:
 
       - name: Install IskakINO Dependencies
         env:
-          GH_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+          # Pastikan SECRET ini sudah Anda buat di GitHub Settings
+          MY_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
         run: |
           mkdir -p $HOME/Arduino/libraries
           cd $HOME/Arduino/libraries
           
-          echo "Configuring Git Authentication..."
-          # Menggunakan format 'x-access-token' yang lebih standar untuk GitHub Actions
-          git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
-          
           echo "Cloning Private Dependencies..."
-          git clone --depth 1 https://github.com/iskakfatoni/IskakINO_WifiPortal.git
-          git clone --depth 1 https://github.com/iskakfatoni/IskakINO-ArduFast.git
+          # Format: https://<token>@github.com/...
+          # Kita gunakan variable MY_TOKEN agar lebih clean
+          git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO_WifiPortal.git
+          git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO-ArduFast.git
 
       - name: Compile All Examples
         run: |
           LIB_PATH="$HOME/Arduino/libraries"
           for example in $(find examples -name "*.ino"); do
-            echo ""
-            echo "======================================================="
-            echo " BUILDING: $example (${{ matrix.board }})"
-            echo "======================================================="
+            echo "Building: $example (${{ matrix.board }})"
             arduino-cli compile --fqbn ${{ matrix.board }} "$example" --library . --libraries $LIB_PATH
           done
-
-  status:
-    name: "3. Final Report"
-    runs-on: ubuntu-latest
-    needs: [lint, build]
-    if: success()
-    steps:
-      - run: echo "🚀 Berhasil! Semua dependensi ditarik dan compile sukses."
