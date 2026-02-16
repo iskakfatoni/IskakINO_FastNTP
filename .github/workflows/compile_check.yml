@@ -20,7 +20,7 @@ jobs:
         with:
           compliance: specification
           recursive: true
-          # Menggunakan parameter resmi untuk library yang sudah terdaftar
+          # Menggunakan parameter resmi untuk library yang sudah berhasil terdaftar
           library-manager: update
 
   build:
