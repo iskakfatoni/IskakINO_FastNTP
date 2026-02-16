@@ -17,11 +17,9 @@ jobs:
       - name: Arduino Lint
         uses: arduino/arduino-lint-action@v1
         with:
-          # KUNCINYA: Jangan gunakan 'library-manager' sama sekali di sini
-          # Cukup gunakan compliance specification dan recursive
           compliance: specification
           recursive: true
-          # Skip rule LP018 jika masih muncul secara internal
+          # Tetap skip LP018 untuk menghindari error registri nama
           args: --skip-rule LP018
 
   build:
@@ -39,15 +37,19 @@ jobs:
       - name: Install Arduino CLI
         uses: arduino/setup-arduino-cli@v1
 
-      - name: Install Platforms
+      - name: Configure Arduino CLI & Install Platforms
         run: |
+          # 1. Tambahkan URL Board Manager untuk ESP8266 dan ESP32
+          arduino-cli config init
+          arduino-cli config set board_manager.additional_urls https://arduino.esp8266.com/stable/package_esp8266com_index.json,https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+          
+          # 2. Update index agar CLI mengenali core baru tersebut
           arduino-cli core update-index
+          
+          # 3. Install core sesuai matrix board
           if [[ "${{ matrix.board }}" == *"esp8266"* ]]; then
             arduino-cli core install esp8266:esp8266
           else
-            arduino-cli config init
-            arduino-cli config set board_manager.additional_urls https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
-            arduino-cli core update-index
             arduino-cli core install esp32:esp32
           fi
 
@@ -56,6 +58,7 @@ jobs:
           mkdir -p $HOME/Arduino/libraries
           cd $HOME/Arduino/libraries
           echo "Cloning required IskakINO libraries..."
+          # Clone dependensi agar include header tidak error
           git clone --depth 1 https://github.com/iskakfatoni/IskakINO_WifiPortal.git
           git clone --depth 1 https://github.com/iskakfatoni/IskakINO-ArduFast.git
 
@@ -63,8 +66,9 @@ jobs:
         run: |
           for example in $(find examples -name "*.ino"); do
             echo "-------------------------------------------------------"
-            echo "Building: $example"
+            echo "Building: $example for ${{ matrix.board }}"
             echo "-------------------------------------------------------"
+            # Kompilasi dengan menyertakan library lokal dan folder dependensi
             arduino-cli compile --fqbn ${{ matrix.board }} "$example" --library . --libraries $HOME/Arduino/libraries
           done
 
@@ -74,4 +78,4 @@ jobs:
     needs: [lint, build]
     if: success()
     steps:
-      - run: echo "🚀 Build Sukses! IskakINO_FastNTP siap digunakan."
+      - run: echo "🚀 Mantap iskakfatoni! Semua core terinstal dan compile sukses!"
