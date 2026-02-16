@@ -28,6 +28,7 @@ class IskakINO_FastNTP {
     uint32_t _requestMs;           
     uint32_t _currentEpoch;        
     uint32_t _lastUpdateTick;      
+    uint32_t _bootTimestamp;       // Menyimpan epoch saat pertama kali sinkron sukses
     
     NTP_State _state = STATE_IDLE; 
     byte _packetBuffer[48];        
@@ -43,8 +44,9 @@ class IskakINO_FastNTP {
     
     // --- Status & Validasi ---
     bool isTimeSet() const { return _currentEpoch > 0; }
-    bool isTimeReliable(uint32_t maxAgeSeconds = 86400); // Cek jika sinkron terakhir < 24 jam
+    bool isTimeReliable(uint32_t maxAgeSeconds = 86400); 
     uint32_t getEpoch();
+    uint32_t getUptimeSeconds();        // Total waktu berjalan sejak sinkron pertama
     uint32_t getMillisSinceLastSync();
 
     // --- Getters Waktu (Satuan) ---
@@ -60,12 +62,21 @@ class IskakINO_FastNTP {
     String getMonthName(NTP_Language lang = LANG_ID);
     
     // --- Getters Formatted String ---
-    String getFormattedTime();                       // HH:MM:SS
-    String getFormattedDate(char separator = '-');   // DD-MM-YYYY
+    String getFormattedTime();                       
+    String getFormattedDate(char separator = '-');   
 
-    // --- Pengaturan ---
+    // --- Fitur Kontrol & Alarm ---
+    /**
+     * @brief Cek apakah waktu saat ini cocok dengan waktu alarm (HH:MM:SS)
+     */
+    bool isAlarmActive(int hr, int min, int sec = 0);
+
+    /**
+     * @brief Sinkronisasi manual dari variabel eksternal (misal RTC atau Portal)
+     */
+    void setEpoch(uint32_t manualEpoch);             
+
     void setSyncInterval(uint32_t intervalMs) { _syncInterval = intervalMs; }
-    void setEpoch(uint32_t manualEpoch);             // Manual override jika diperlukan
 };
 
 #endif
