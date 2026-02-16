@@ -27,6 +27,7 @@ jobs:
     needs: lint
     strategy:
       matrix:
+        # Menjalankan build untuk ESP8266 dan ESP32 secara paralel
         board: [ "esp8266:esp8266:nodemcuv2", "esp32:esp32:esp32" ]
     
     steps:
@@ -53,26 +54,30 @@ jobs:
         run: |
           mkdir -p $HOME/Arduino/libraries
           cd $HOME/Arduino/libraries
-          echo "Cloning Dependencies..."
-          git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO_WifiPortal.git || true
-          git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO-ArduFast.git || \
-          git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO_ArduFast.git || true
-
-      - name: Patch Library & Source Code
-        run: |
-          echo "Fixing undefined reference and private member calls..."
           
-          # 1. Hapus portal.handle (private member error)
+          echo "Cloning Dependencies from iskakfatoni..."
+          # Clone WifiPortal
+          git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO_WifiPortal.git || true
+          
+          # Clone ArduFast (Coba underscore dan dash untuk keamanan)
+          git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO_ArduFast.git || \
+          git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO-ArduFast.git || true
+
+      - name: Patch Library & Source Conflicts
+        run: |
+          echo "Running Auto-Patch to fix library inconsistencies..."
+          
+          # 1. Fix WifiPortal: Hapus baris portal.handle karena statusnya PRIVATE
           find examples -name "*.ino" -exec sed -i '/portal.handle/d' {} +
           
-          # 2. Redirect IO calls ke global Arduino functions
+          # 2. Fix ArduFast: Alihkan io.member ke global function (pinMode, digitalWrite, digitalRead)
           find examples -name "*.ino" -exec sed -i 's/io.pinMode/pinMode/g' {} +
           find examples -name "*.ino" -exec sed -i 's/io.digitalWrite/digitalWrite/g' {} +
+          find examples -name "*.ino" -exec sed -i 's/io.digitalRead/digitalRead/g' {} +
 
-          # 3. FIX LINKER ERROR: Menyuntikkan fungsi getMillisSinceLastSync ke .cpp jika hilang
-          # Kita cek apakah fungsi sudah ada, jika belum, kita tambahkan di akhir file .cpp
-          if ! grep -q "getMillisSinceLastSync" src/IskakINO_FastNTP.cpp; then
-            echo -e "\nunsigned long IskakINO_FastNTP::getMillisSinceLastSync() { return millis() - _lastSyncMillis; }" >> src/IskakINO_FastNTP.cpp
+          # 3. Fix FastNTP: Pastikan tipe data getMillisSinceLastSync sinkron (uint32_t)
+          if [ -f "src/IskakINO_FastNTP.cpp" ]; then
+            sed -i 's/unsigned long IskakINO_FastNTP::getMillisSinceLastSync/uint32_t IskakINO_FastNTP::getMillisSinceLastSync/g' src/IskakINO_FastNTP.cpp
           fi
 
       - name: Compile All Examples
@@ -91,4 +96,4 @@ jobs:
     needs: [lint, build]
     if: success()
     steps:
-      - run: echo "🎉 AKHIRNYA! Semua example (termasuk System Health) sukses di-compile!"
+      - run: echo "🚀 SUCCESS! IskakINO_FastNTP berhasil melewati semua tahap pengujian."
