@@ -20,7 +20,8 @@ jobs:
         with:
           compliance: specification
           recursive: true
-          args: --skip-rule LP018
+          # Tambahkan flag --library-manager update di bawah ini
+          args: --skip-rule LP018 --library-manager update
 
   build:
     name: "2. Compile Examples"
