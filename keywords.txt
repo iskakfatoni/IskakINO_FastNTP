@@ -1,0 +1,47 @@
+#######################################
+# Syntax Highlighting For IskakINO_FastNTP
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+IskakINO_FastNTP	KEYWORD1
+NTP_Language	KEYWORD1
+NTP_State	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin	KEYWORD2
+update	KEYWORD2
+forceUpdate	KEYWORD2
+isTimeSet	KEYWORD2
+isTimeReliable	KEYWORD2
+getEpoch	KEYWORD2
+getUptimeSeconds	KEYWORD2
+getMillisSinceLastSync	KEYWORD2
+getSeconds	KEYWORD2
+getMinutes	KEYWORD2
+getHours	KEYWORD2
+getDay	KEYWORD2
+getMonth	KEYWORD2
+getYear	KEYWORD2
+getDayName	KEYWORD2
+getMonthName	KEYWORD2
+getFormattedTime	KEYWORD2
+getFormattedDate	KEYWORD2
+isAlarmActive	KEYWORD2
+setEpoch	KEYWORD2
+setSyncInterval	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+LANG_EN	LITERAL1
+LANG_ID	LITERAL1
+STATE_IDLE	LITERAL1
+STATE_SEND_REQUEST	LITERAL1
+STATE_AWAIT_RESPONSE	LITERAL1
