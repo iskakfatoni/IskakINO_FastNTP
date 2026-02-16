@@ -5,8 +5,8 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
-  workflow_dispatch: # <--- Tambahkan baris ini (sejajar dengan push) <--- Tambahkan baris ini (sejajar dengan push)
-  
+  workflow_dispatch: 
+
 jobs:
   lint:
     name: "1. Arduino Lint"
@@ -20,7 +20,7 @@ jobs:
         with:
           compliance: specification
           recursive: true
-          # Tambahkan flag --library-manager update di bawah ini
+          # Menggunakan flag update karena library sudah resmi terdaftar di index Arduino
           args: --skip-rule LP018 --library-manager update
 
   build:
@@ -57,7 +57,6 @@ jobs:
           cd $HOME/Arduino/libraries
           
           echo "Cloning Dependencies..."
-          # Clone WifiPortal & ArduFast tanpa trik sed
           git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO_WifiPortal.git || true
           git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO_ArduFast.git || \
           git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO-ArduFast.git || true
@@ -69,7 +68,6 @@ jobs:
             echo "-------------------------------------------------------"
             echo "Building: $example (${{ matrix.board }})"
             echo "-------------------------------------------------------"
-            # Kompilasi bersih tanpa modifikasi file
             arduino-cli compile --fqbn ${{ matrix.board }} "$example" --library . --libraries $LIB_PATH
           done
 
