@@ -59,7 +59,7 @@ jobs:
           # Format: https://<token>@github.com/...
           # Kita gunakan variable MY_TOKEN agar lebih clean
           git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO_WifiPortal.git
-          git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO-ArduFast.git
+          git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO_ArduFast.git
 
       - name: Compile All Examples
         run: |
