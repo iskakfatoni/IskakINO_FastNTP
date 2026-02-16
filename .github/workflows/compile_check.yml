@@ -20,8 +20,8 @@ jobs:
         with:
           compliance: specification
           recursive: true
-          # Menggunakan flag update karena library sudah resmi terdaftar di index Arduino
-          args: --skip-rule LP018 --library-manager update
+          # Menggunakan parameter resmi untuk library yang sudah terdaftar
+          library-manager: update
 
   build:
     name: "2. Compile Examples"
@@ -57,6 +57,7 @@ jobs:
           cd $HOME/Arduino/libraries
           
           echo "Cloning Dependencies..."
+          # Clone menggunakan token untuk akses repository private/public milik iskakfatoni
           git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO_WifiPortal.git || true
           git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO_ArduFast.git || \
           git clone --depth 1 https://${MY_TOKEN}@github.com/iskakfatoni/IskakINO-ArduFast.git || true
@@ -68,6 +69,7 @@ jobs:
             echo "-------------------------------------------------------"
             echo "Building: $example (${{ matrix.board }})"
             echo "-------------------------------------------------------"
+            # Kompilasi dengan menyertakan library utama dan dependencies
             arduino-cli compile --fqbn ${{ matrix.board }} "$example" --library . --libraries $LIB_PATH
           done
 
@@ -77,4 +79,4 @@ jobs:
     needs: [lint, build]
     if: success()
     steps:
-      - run: echo "🚀 MANTAP! Library IskakINO_FastNTP sudah stand-alone dan lulus uji tanpa patching."
+      - run: echo "🚀 MANTAP! Library IskakINO_FastNTP lulus uji linting (update mode) dan kompilasi."
