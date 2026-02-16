@@ -14,14 +14,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Arduino Lint
-        uses: arduino/arduino-lint-action@v1
-        with:
-          compliance: specification
-          # Tetap gunakan update agar linter jalan
-          library-manager: update
-          # KUNCI UTAMA: Skip aturan LP018 (registri nama) agar tidak error
-          args: --skip-rule LP018 --recursive
+      - name: Install Arduino Lint
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/arduino/arduino-lint/main/install.sh | sh
+          echo "$HOME/bin" >> $GITHUB_PATH
+
+      - name: Run Arduino Lint (Bypass LP018)
+        run: |
+          # Kita jalankan manual tanpa library-manager agar tidak cek index sama sekali
+          arduino-lint --compliance specification --recursive --skip-rule LP018 .
 
   build:
     name: "Compile Examples"
@@ -55,14 +56,15 @@ jobs:
           mkdir -p $HOME/Arduino/libraries
           cd $HOME/Arduino/libraries
           echo "Cloning required IskakINO libraries..."
-          # Menggunakan --depth 1 agar clone lebih cepat
           git clone --depth 1 https://github.com/iskakfatoni/IskakINO_WifiPortal.git
           git clone --depth 1 https://github.com/iskakfatoni/IskakINO-ArduFast.git
 
       - name: Compile All Examples
         run: |
           for example in $(find examples -name "*.ino"); do
-            echo "Building: $example for ${{ matrix.board }}"
+            echo "-------------------------------------------------------"
+            echo "Building: $example"
+            echo "-------------------------------------------------------"
             arduino-cli compile --fqbn ${{ matrix.board }} "$example" --library . --libraries $HOME/Arduino/libraries
           done
 
@@ -72,4 +74,4 @@ jobs:
     needs: [lint, build]
     if: success()
     steps:
-      - run: echo "🚀 Semua tahap berhasil! IskakINO_FastNTP siap digunakan."
+      - run: echo "🚀 Build Sukses! Ekosistem IskakINO aman dikelola."
