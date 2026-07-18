@@ -31,7 +31,8 @@ void setup() {
   Serial.begin(115200);
   
   // Inisialisasi Portal (Tanpa nunggu koneksi untuk contoh ini)
-  portal.begin("IskakINO_Manual_Clock");
+  portal.setBrandName("IskakINO_Manual_Clock");
+  portal.begin("IskakINO_Manual_Clock-AP", "12345678");
 
   // Inisialisasi NTP seperti biasa
   ntp.begin(25200); 
@@ -50,7 +51,7 @@ void setup() {
 
 void loop() {
   // Portal tetap berjalan untuk manajemen WiFi
-  portal.handle();
+  portal.tick();
 
   // Update tetap dijalankan. 
   // Jika WiFi terhubung, dia akan sinkron otomatis ke internet.

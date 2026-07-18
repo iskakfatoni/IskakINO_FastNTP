@@ -38,7 +38,8 @@ void setup() {
   io.digitalWrite(LED_INDICATOR, HIGH); // Matikan (Active Low)
 
   // Memulai Portal WiFi
-  portal.begin("IskakINO_Project");
+  portal.setBrandName("IskakINO_Project");
+  portal.begin("IskakINO_Project-AP", "12345678");
 
   // Memulai NTP (WIB)
   ntp.begin(25200); 
@@ -47,7 +48,7 @@ void setup() {
 }
 
 void loop() {
-  portal.handle();
+  portal.tick();
 
   if (WiFi.status() == WL_CONNECTED) {
     ntp.update();

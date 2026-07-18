@@ -36,12 +36,13 @@ void setup() {
   // Inisialisasi Pin via ArduFast
   io.pinMode(STATUS_LED, OUTPUT);
 
-  portal.begin("IskakINO_Indikator");
+  portal.setBrandName("IskakINO_Indikator");
+  portal.begin("IskakINO_Indikator-AP", "12345678");
   ntp.begin(25200);
 }
 
 void loop() {
-  portal.handle();
+  portal.tick();
   
   if (WiFi.status() == WL_CONNECTED) {
     ntp.update();

@@ -31,14 +31,15 @@ unsigned long reportTimer = 0;
 void setup() {
   Serial.begin(115200);
   
-  portal.begin("IskakINO_Health");
+  portal.setBrandName("IskakINO_Health");
+  portal.begin("IskakINO_Health-AP", "12345678");
   ntp.begin(25200); // GMT+7
   
   Serial.println(F("--- Example 09: System Health Monitor ---"));
 }
 
 void loop() {
-  portal.handle();
+  portal.tick();
   
   if (WiFi.status() == WL_CONNECTED) {
     ntp.update();

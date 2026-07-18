@@ -44,7 +44,8 @@ void setup() {
   io.digitalWrite(PIN_RELAY_TERAS, LOW);
 
   // 2. Mulai Portal WiFi
-  portal.begin("IskakINO_SmartHome");
+  portal.setBrandName("IskakINO_SmartHome");
+  portal.begin("IskakINO_SmartHome-AP", "12345678");
 
   // 3. Mulai NTP (GMT+7)
   ntp.begin(25200);
@@ -56,7 +57,7 @@ void setup() {
 
 void loop() {
   // --- LAYER 1: MAINTENANCE (Wajib) ---
-  portal.handle();
+  portal.tick();
   if (WiFi.status() == WL_CONNECTED) {
     ntp.update();
   }

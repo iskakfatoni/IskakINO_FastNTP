@@ -36,12 +36,13 @@ void setup() {
   io.digitalWrite(PIN_RELAY_KANTOR, LOW); 
 
   // Inisialisasi Portal & NTP
-  portal.begin("IskakINO_Office");
+  portal.setBrandName("IskakINO_Office");
+  portal.begin("IskakINO_Office-AP", "12345678");
   ntp.begin(25200); // WIB
 }
 
 void loop() {
-  portal.handle();
+  portal.tick();
 
   if (WiFi.status() == WL_CONNECTED) {
     ntp.update();

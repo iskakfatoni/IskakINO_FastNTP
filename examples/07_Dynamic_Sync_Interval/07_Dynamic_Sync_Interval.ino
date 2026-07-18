@@ -29,14 +29,15 @@ IskakINO_ArduFast io;
 void setup() {
   Serial.begin(115200);
   
-  portal.begin("IskakINO_Dynamic");
+  portal.setBrandName("IskakINO_Dynamic");
+  portal.begin("IskakINO_Dynamic-AP", "12345678");
   ntp.begin(25200); // GMT+7
 
   Serial.println(F("--- Example 07: Dynamic Sync ---"));
 }
 
 void loop() {
-  portal.handle();
+  portal.tick();
 
   if (WiFi.status() == WL_CONNECTED) {
     ntp.update();

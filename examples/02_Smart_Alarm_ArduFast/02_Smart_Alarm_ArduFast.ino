@@ -40,7 +40,8 @@ void setup() {
   io.digitalWrite(RELAY_PIN, LOW); // Matikan relay saat awal
 
   // 2. Mulai Portal
-  portal.begin("IskakINO_SmartHome");
+  portal.setBrandName("IskakINO_SmartHome");
+  portal.begin("IskakINO_SmartHome-AP", "12345678");
 
   // 3. Mulai NTP (WIB = GMT+7)
   ntp.begin(25200); 
@@ -49,8 +50,8 @@ void setup() {
 }
 
 void loop() {
-  // Selalu jalankan handle portal
-  portal.handle();
+  // Selalu jalankan tick portal
+  portal.tick();
 
   // Update State Machine NTP jika WiFi OK
   if (WiFi.status() == WL_CONNECTED) {

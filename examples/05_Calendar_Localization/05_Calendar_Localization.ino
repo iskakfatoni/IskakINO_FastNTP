@@ -31,7 +31,8 @@ void setup() {
   Serial.begin(115200);
   
   // Portal untuk koneksi WiFi
-  portal.begin("IskakINO_Calendar");
+  portal.setBrandName("IskakINO_Calendar");
+  portal.begin("IskakINO_Calendar-AP", "12345678");
 
   // Inisialisasi NTP (GMT+7 untuk Indonesia)
   ntp.begin(25200); 
@@ -40,7 +41,7 @@ void setup() {
 }
 
 void loop() {
-  portal.handle();
+  portal.tick();
 
   if (WiFi.status() == WL_CONNECTED) {
     ntp.update();

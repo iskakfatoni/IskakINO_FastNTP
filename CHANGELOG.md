@@ -20,5 +20,8 @@ Semua perubahan penting pada project ini akan didokumentasikan di file ini.
 - `README.md`: menambahkan dokumentasi untuk `isTimeSet()`, `forceUpdate()`, `setSyncInterval()`, overload `isAlarmActive()` one-shot, catatan tentang semantik `getEpoch()` (epoch lokal, bukan UTC murni), dan tabel daftar examples.
 - Example `02`, `06`, `10`: diperbarui untuk menggunakan overload `isAlarmActive()` one-shot agar tidak spam Serial / retrigger berulang.
 
+### Fixed (CI compile error)
+- Semua example (`02`–`10`) yang menggunakan `IskakINO_WifiPortal` memakai API yang salah: `portal.begin("Nama")` (1 argumen) dan `portal.handle()`. API asli library tersebut adalah `portal.setBrandName("Nama")` + `portal.begin("Nama-AP", "password")`, dan `portal.tick()` (bukan `handle()`). Semua example diperbaiki untuk memakai API yang benar sehingga lolos compile-check CI (`esp8266:nodemcuv2`).
+
 ## [1.0.0] - Initial Release
 - Rilis awal: NTP non-blocking, clock simulation, multi-bahasa (ID/EN), fitur uptime, auto-sync.
