@@ -73,14 +73,19 @@ void loop() {
   }
 
   // --- LAYER 3: AUTOMATION LOGIC (FastNTP) ---
+  // Pakai versi one-shot (firedFlag) supaya event hanya tercatat/dieksekusi
+  // SEKALI, bukan berulang kali selama detik yang sama berlangsung.
+  static bool terasOnFired = false;
+  static bool terasOffFired = false;
+
   // Aksi Jam 18:00:00 (Nyalakan Lampu Teras)
-  if (ntp.isAlarmActive(18, 0, 0)) {
+  if (ntp.isAlarmActive(18, 0, 0, terasOnFired)) {
     io.digitalWrite(PIN_RELAY_TERAS, HIGH);
     Serial.println(F("[EVENT] Jam 18:00: Lampu Teras ON"));
   }
 
   // Aksi Jam 06:00:00 (Matikan Lampu Teras)
-  if (ntp.isAlarmActive(6, 0, 0)) {
+  if (ntp.isAlarmActive(6, 0, 0, terasOffFired)) {
     io.digitalWrite(PIN_RELAY_TERAS, LOW);
     Serial.println(F("[EVENT] Jam 06:00: Lampu Teras OFF"));
   }

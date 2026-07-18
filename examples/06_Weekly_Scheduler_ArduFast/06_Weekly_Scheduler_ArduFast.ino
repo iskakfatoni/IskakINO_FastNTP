@@ -53,16 +53,21 @@ void loop() {
   String hariIni = ntp.getDayName(LANG_EN); // Gunakan English agar lebih stabil untuk pembanding string
 
   // 2. Logika: Senin s/d Jumat jam 08:00:00 (Waktu Masuk Kantor)
+  //    Pakai versi one-shot (firedFlag) supaya relay tidak di-toggle
+  //    berulang kali selama detik yang sama.
+  static bool masukFired = false;
+  static bool pulangFired = false;
+
   if (hariIni != "Saturday" && hariIni != "Sunday") {
     
     // Cek jam masuk (08:00:00)
-    if (ntp.isAlarmActive(8, 0, 0)) {
+    if (ntp.isAlarmActive(8, 0, 0, masukFired)) {
       io.digitalWrite(PIN_RELAY_KANTOR, HIGH);
       Serial.println(F("KERJA: Nyalakan fasilitas kantor!"));
     }
 
     // Cek jam pulang (17:00:00)
-    if (ntp.isAlarmActive(17, 0, 0)) {
+    if (ntp.isAlarmActive(17, 0, 0, pulangFired)) {
       io.digitalWrite(PIN_RELAY_KANTOR, LOW);
       Serial.println(F("PULANG: Matikan fasilitas kantor!"));
     }

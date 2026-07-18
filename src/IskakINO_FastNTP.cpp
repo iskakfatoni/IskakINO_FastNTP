@@ -9,8 +9,12 @@ IskakINO_FastNTP::IskakINO_FastNTP(UDP& udp, const char* server) {
     _syncInterval = 3600000; // Default 1 jam
     _currentEpoch = 0;
     _lastSyncMs = 0;
+    _requestMs = 0;
+    _lastUpdateTick = 0;      // FIX: dulu tidak diinisialisasi (uninitialized member)
     _bootTimestamp = 0;
-    _state = STATE_IDLE; // Pastikan state awal didefinisikan
+    _gmtOffsetSec = 0;
+    _daylightOffsetSec = 0;
+    _state = STATE_IDLE;
 }
 
 /**
@@ -19,7 +23,7 @@ IskakINO_FastNTP::IskakINO_FastNTP(UDP& udp, const char* server) {
 void IskakINO_FastNTP::begin(long gmtOffset, int daylightOffset) {
     _gmtOffsetSec = gmtOffset;
     _daylightOffsetSec = daylightOffset;
-    _udp->begin(123); 
+    _udp->begin(123);
 }
 
 /**
@@ -49,42 +53,50 @@ void IskakINO_FastNTP::update() {
             _state = STATE_AWAIT_RESPONSE;
             break;
 
-        case STATE_AWAIT_RESPONSE:
-            if (_udp->parsePacket()) {
+        case STATE_AWAIT_RESPONSE: {
+            int packetSize = _udp->parsePacket();
+
+            if (packetSize >= 48) {
+                // FIX: validasi ukuran paket sebelum dibaca, hindari parsing
+                // byte offset 40-43 dari buffer yang isinya garbage/basi.
                 _udp->read(_packetBuffer, 48);
-                
+
                 uint32_t highWord = word(_packetBuffer[40], _packetBuffer[41]);
                 uint32_t lowWord = word(_packetBuffer[42], _packetBuffer[43]);
                 uint32_t secsSince1900 = highWord << 16 | lowWord;
-                
+
                 const uint32_t seventyYears = 2208988800UL;
                 uint32_t epoch = secsSince1900 - seventyYears;
-                
+
                 _currentEpoch = epoch + _gmtOffsetSec + _daylightOffsetSec;
                 _lastSyncMs = millis();
                 _lastUpdateTick = millis();
-                
+
                 if (_bootTimestamp == 0) _bootTimestamp = _currentEpoch - (millis() / 1000);
-                
+
                 _state = STATE_IDLE;
-            } 
-            else if (millis() - _requestMs > 2000) { 
+            }
+            else if (packetSize > 0) {
+                // FIX: paket datang tapi ukurannya tidak valid untuk NTP (< 48 byte).
+                // Buang saja, jangan diproses, dan tetap tunggu paket berikutnya
+                // sampai timeout tercapai.
+            }
+            else if (millis() - _requestMs > 2000) {
                 _state = STATE_IDLE;
-                _lastSyncMs = millis() - (_syncInterval - 15000); 
+                _lastSyncMs = millis() - (_syncInterval - 15000);
             }
             break;
+        }
     }
 }
 
 void IskakINO_FastNTP::sendNTPPacket() {
     memset(_packetBuffer, 0, 48);
-    _packetBuffer[0] = 0b11100011;   
+    _packetBuffer[0] = 0b11100011;
     _udp->beginPacket(_ntpServer, 123);
     _udp->write(_packetBuffer, 48);
     _udp->endPacket();
 }
-
-// --- FUNGSI YANG DIPERBAIKI/DITAMBAHKAN UNTUK EXAMPLE 09 ---
 
 /**
  * getMillisSinceLastSync: Menghitung selisih waktu sejak sinkronisasi sukses terakhir.
@@ -101,17 +113,20 @@ int IskakINO_FastNTP::getMinutes()    { return (_currentEpoch % 3600) / 60; }
 int IskakINO_FastNTP::getHours()      { return (_currentEpoch % 86400L) / 3600; }
 
 int IskakINO_FastNTP::getDay() {
-    tm *ptm = gmtime((const time_t *)&_currentEpoch);
+    time_t t = (time_t)_currentEpoch;
+    tm *ptm = gmtime(&t);
     return ptm->tm_mday;
 }
 
 int IskakINO_FastNTP::getMonth() {
-    tm *ptm = gmtime((const time_t *)&_currentEpoch);
+    time_t t = (time_t)_currentEpoch;
+    tm *ptm = gmtime(&t);
     return ptm->tm_mon + 1;
 }
 
 int IskakINO_FastNTP::getYear() {
-    tm *ptm = gmtime((const time_t *)&_currentEpoch);
+    time_t t = (time_t)_currentEpoch;
+    tm *ptm = gmtime(&t);
     return ptm->tm_year + 1900;
 }
 
@@ -142,7 +157,7 @@ String IskakINO_FastNTP::getFormattedTime() {
 }
 
 String IskakINO_FastNTP::getFormattedDate(char separator) {
-    char buf[12];
+    char buf[16];
     sprintf(buf, "%02d%c%02d%c%d", getDay(), separator, getMonth(), separator, getYear());
     return String(buf);
 }
@@ -151,8 +166,33 @@ bool IskakINO_FastNTP::isAlarmActive(int hr, int min, int sec) {
     return (getHours() == hr && getMinutes() == min && getSeconds() == sec);
 }
 
+bool IskakINO_FastNTP::isAlarmActive(int hr, int min, int sec, bool &firedFlag) {
+    bool match = isAlarmActive(hr, min, sec);
+
+    if (match && !firedFlag) {
+        firedFlag = true;
+        return true; // fire tepat sekali
+    }
+
+    if (!match) {
+        firedFlag = false; // reset supaya siap fire lagi di kesempatan berikutnya
+    }
+
+    return false;
+}
+
 bool IskakINO_FastNTP::isTimeReliable(uint32_t maxAgeSeconds) {
-    return (_currentEpoch > 0 && (millis() - _lastSyncMs < maxAgeSeconds * 1000));
+    if (_currentEpoch == 0) return false;
+
+    uint32_t elapsedMs = millis() - _lastSyncMs;
+
+    // FIX: hindari overflow uint32_t saat maxAgeSeconds * 1000 (terjadi untuk
+    // maxAgeSeconds > ~4.294.967 detik / ~49,7 hari). Nilai di atas itu
+    // di-cap ke maksimum uint32_t, karena secara praktik artinya "selalu reliable".
+    uint64_t maxAgeMs64 = (uint64_t)maxAgeSeconds * 1000ULL;
+    uint32_t maxAgeMs = (maxAgeMs64 > 0xFFFFFFFFULL) ? 0xFFFFFFFFUL : (uint32_t)maxAgeMs64;
+
+    return elapsedMs < maxAgeMs;
 }
 
 uint32_t IskakINO_FastNTP::getUptimeSeconds() {
@@ -164,6 +204,12 @@ void IskakINO_FastNTP::setEpoch(uint32_t manualEpoch) {
     _currentEpoch = manualEpoch;
     _lastUpdateTick = millis();
     _lastSyncMs = millis(); // Anggap ini sebagai titik sinkronisasi manual
+
+    // FIX: dulu setEpoch() tidak pernah mengisi _bootTimestamp, sehingga
+    // getUptimeSeconds() diam-diam memakai jalur fallback (millis()/1000)
+    // selamanya jika device tidak pernah sync NTP. Sekarang konsisten dengan
+    // jalur sync otomatis di update().
+    if (_bootTimestamp == 0) _bootTimestamp = _currentEpoch - (millis() / 1000);
 }
 
 void IskakINO_FastNTP::forceUpdate() {

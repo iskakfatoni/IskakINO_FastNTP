@@ -57,15 +57,20 @@ void loop() {
     ntp.update();
   }
 
-  // LOGIKA ALARM: Menggunakan isAlarmActive()
+  // LOGIKA ALARM: Menggunakan isAlarmActive() versi one-shot (firedFlag)
+  // agar HANYA fire sekali saat detiknya tercapai, bukan ratusan kali
+  // selama detik itu berlangsung.
+  static bool nyalaFired = false;
+  static bool matiFired = false;
+
   // Contoh: Nyalakan lampu setiap jam 18:00:00
-  if (ntp.isAlarmActive(18, 0, 0)) {
+  if (ntp.isAlarmActive(18, 0, 0, nyalaFired)) {
     io.digitalWrite(RELAY_PIN, HIGH);
     Serial.println(F("ALARM: Lampu Dinyalakan!"));
   }
 
   // Contoh: Matikan lampu setiap jam 06:00:00
-  if (ntp.isAlarmActive(6, 0, 0)) {
+  if (ntp.isAlarmActive(6, 0, 0, matiFired)) {
     io.digitalWrite(RELAY_PIN, LOW);
     Serial.println(F("ALARM: Lampu Dimatikan!"));
   }
